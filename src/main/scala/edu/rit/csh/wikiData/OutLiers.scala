@@ -44,15 +44,11 @@ object OutLiers {
         val sorted = data.toArray.sortWith((elem1, elem2) => elem1._1.before(elem2._1))
         
         // generate the local outlier factor for each data point
-        //val pts = (elemCount until sorted.length).map({ (i: Int) => 
-        //    (title, (kDistance(i, elemCount, sorted), sorted(i)._1))
-        //  })
-        //  .filter({ case(_, (distance, _)) => distance > 2000 })
-        (title, (elemCount until sorted.length).map({ (i: Int) => 
-            Detection.expValue(i, elemCount, sorted)
-        }).mkString(","))
+        val pts = (elemCount until sorted.length).map({ (i: Int) => 
+            (title, (Detection.kDistance(i, elemCount, sorted), sorted(i)._1))
+          })
+          .filter({ case(_, (distance, _)) => distance > 2000 })
         // string representations of the group of anomalies
-        /*
         val results = new ListBuffer[(String, (Int, Date, Date))]()
 
         if (!pts.isEmpty) {
@@ -75,14 +71,9 @@ object OutLiers {
           }
         }
         results.iterator
-        */
       })
-      //.flatMap(a => a)
-      // filter out anomalies that are happend more than 1 day old
-      //.filter({case(title, (distance, start, end)) =>  end.after(new Date(new Date().getTime() - DAY_IN_MILLI))})
-      //.map({case(title, (distance, start, end)) => title + "," + distance + "," + parser.format(start) + "," + parser.format(end) })
-      .sortByKey(true, 1)
-      .map({ case(title, pts) => title + "\t" + pts })
+      .flatMap(a => a)
+      .map({case(title, (distance, start, end)) => title + "," + distance + "," + parser.format(start) + "," + parser.format(end) })
       .saveAsTextFile(outputDir)
   }
 }

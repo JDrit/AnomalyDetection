@@ -11,22 +11,12 @@ import java.text.SimpleDateFormat
 import scala.collection.mutable.ListBuffer
 
 /**
- * Find the highest anomalies for each title for the input
+ * Find the highest anomalies for each title for the input.
+ * This will run against the newest data to determine what articles have
+ * the highest anomalies in the last n days.
  */
 object NewAnomalies {
   
-  /**
-   * Determine the average distance from the kth previous data points
-   *
-   * @param index the current index to compute the distance for
-   * @param elemCount the number of points to compare against
-   * @param data all the data points
-   * @return the Kth Distance
-   */
-  def kDistance(index: Int, elemCount: Int, data: Array[(Date, Int)]): Int = {
-    (index - elemCount until index).map(i => (data(index)._2 - data(i)._2).abs).sum / elemCount
-  }
-
   def main(args: Array[String]) = {
     val conf = new SparkConf().setAppName("Find data anomalies")
     val sc = new SparkContext(conf)
@@ -56,7 +46,9 @@ object NewAnomalies {
       .map({case(title, data) =>
         // the data points sorted by timestamp
         val sorted = data.toArray.sortWith((elem1, elem2) => elem1._1.before(elem2._1))
-        val max = (elemCount until sorted.length).map({ (i: Int) => kDistance(i, elemCount, sorted) })
+        val max = (elemCount until sorted.length).map({ (i: Int) => 
+          Detection.kDistance(i, elemCount, sorted) 
+        })
         if (max.isEmpty) (title, 0)
         else (title, max.max)
       })
