@@ -15,7 +15,9 @@ object Detection {
    * @return the Kth Distance
    */
   def kDistance(index: Int, elemCount: Int, data: Array[(Date, Int)]): Int = {
-    (index - elemCount until index).map(i => (data(index)._2 - data(i)._2).abs).sum / elemCount
+    (index - elemCount until index).map({ i => 
+      ((data(index)._2 - data(i)._2) / data(index)._2).abs
+    }).sum / elemCount
   }
   
   /**

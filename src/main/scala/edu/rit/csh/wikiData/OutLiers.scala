@@ -58,7 +58,7 @@ object OutLiers {
           var endDate = pts.head._2._2
 
           pts.tail foreach { case(title, (distance, date)) =>
-            if (date.getTime() - endDate.getTime() > DAY_IN_MILLI / 4) {
+            if (distance > 100 && date.getTime() - endDate.getTime() > DAY_IN_MILLI / 4) {
               results += ((title, (curDistance, beginDate, endDate)))
               curTitle = title
               curDistance = distance
@@ -73,7 +73,10 @@ object OutLiers {
         results.iterator
       })
       .flatMap(a => a)
-      .map({case(title, (distance, start, end)) => title + "," + distance + "," + parser.format(start) + "," + parser.format(end) })
+      .sortByKey(true, 1)
+      .map({ case(title, (distance, start, end)) => 
+        title + "," + distance + "," + parser.format(start) + "," + parser.format(end) 
+      })
       .saveAsTextFile(outputDir)
   }
 }

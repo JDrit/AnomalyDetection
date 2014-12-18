@@ -18,7 +18,7 @@ import scala.collection.mutable.ListBuffer
 object NewAnomalies {
   
   def main(args: Array[String]) = {
-    val conf = new SparkConf().setAppName("Find data anomalies")
+    val conf = new SparkConf().setAppName("Find new data anomalies")
     val sc = new SparkContext(conf)
    
     if (args.length < 2) {
@@ -34,26 +34,31 @@ object NewAnomalies {
 
     // input format: title , timestamp , views
     sc.textFile(inputDir)
-      .map({line =>
+      .map({ line =>
         val split = line.split("\t")
-        if (split.length == 3)
+        if (split.length == 3 && 
+          parser.parse(split(1)).after(new Date(new Date().getTime() - 3 * DAY_IN_MILLI)))
           (split(0), (parser.parse(split(1)), split(2).toInt))
         else
           null
       })
       .filter(a => a != null)
       .groupByKey()
-      .map({case(title, data) =>
-        // the data points sorted by timestamp
-        val sorted = data.toArray.sortWith((elem1, elem2) => elem1._1.before(elem2._1))
-        val max = (elemCount until sorted.length).map({ (i: Int) => 
-          Detection.kDistance(i, elemCount, sorted) 
-        })
-        if (max.isEmpty) (title, 0)
-        else (title, max.max)
+      .map({ case(title, data) =>
+        if (data.minBy(_._2)._2 < 50) {
+          (0, title)
+        } else {
+          // the data points sorted by timestamp
+          val sorted = data.toArray.sortWith((elem1, elem2) => elem1._1.after(elem2._1))
+          val max = (elemCount until sorted.length).map({ (i: Int) => 
+            Detection.kDistance(i, elemCount, sorted) 
+          })
+          if (max.isEmpty) (0, title)
+          else (max.sum, title)
+        }
       })
-      .filter({case(title, max) => max != 0})
-      .map({case(title, distance) => title + "\t" + distance})
+      .filter({case(max, title) => max != 0})
+      .sortByKey(false, 1)
       .saveAsTextFile(outputDir)
   }
 }
