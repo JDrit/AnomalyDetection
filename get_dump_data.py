@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Downloads the current's hour data
+Gets the dump of data from the given start and end times
 """
 import urllib.request
 from datetime import datetime, timedelta
@@ -8,16 +8,19 @@ import time
 import os
 import gzip
 import codecs
+import sys
 from subprocess import call
 
 def logging(s):
-    print(str(s))
     with open('output', 'a') as f:
         s =  '%s: %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), str(s))
         f.write(str(s) + '\n')
         print(str(s))
 
 def download_timestamp(download_dir, stats_time):
+    """
+    Downloads the current timestamps data into the given directory
+    """
     timestamp = (stats_time - datetime.utcfromtimestamp(0)).total_seconds()
     logging("downloading for %s" % stats_time)
     for second in range(0, 30):
@@ -37,7 +40,10 @@ def download_timestamp(download_dir, stats_time):
     else:
         logging("could not get stats for timestamp")
 
-def create_new_data(file_path):
+def create_new_data(file_path, timestamp):
+    """
+    Parses the dump data and creates the correct format
+    """
     pages_viewed = 0
     total_views = 0
     output_file_name = file_path[:-3]
@@ -56,30 +62,28 @@ def create_new_data(file_path):
     logging('total views: %d' % total_views)
     return output_file_name
 
+def get_time_range(start_timestamp, end_timestamp):
+    """
+    Uploads the data from the given timerange to the dump folder
+    """
+    download_dir = '/tmp'
+    hadoop_dump = '/user/jd/dump2'
+    start_timestamp = start_timestamp.replace(minute=0, second=0, microsecond=0)
+    end_timestamp = end_timestamp.replace(minute=0, second=0, microsecond=0)
+
+    while start_timestamp < end_timestamp:
+        file_path = download_timestamp(download_dir, start_timestamp)
+        output_file_name = create_new_data(file_path, start_timestamp)
+        call(['hadoop', 'fs', '-moveFromLocal', output_file_name, hadoop_dump])
+        start_timestamp += timedelta(hours=1)
+
 if __name__ == '__main__':
-    download_dir    = '/tmp'
-    hadoop_new_data = '/user/jd/new_data/'
-    hadoop_trending = '/user/jd/trending_data/'
-    hadoop_raw_data = '/user/jd/raw_data/'
+    if len(sys.argv) != 3:
+        print("Given timestamps as Month/Day/Year Hour")
+        print("%s [start timestamp] [end timestam]" % sys.argv[0])
+        sys.exit(1)
+    start_timestamp = datetime.strptime(sys.argv[1], "%m/%d/%Y-%H")
+    end_timestamp = datetime.strptime(sys.argv[2], "%m/%d/%Y-%H")
+    logging('start: %s\tend: %s' % (start_timestamp, end_timestamp))
 
-    timestamp = datetime.utcnow().replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
-    logging('Start download for %s' % timestamp)
-    file_path = download_timestamp(download_dir, timestamp)
-    if file_path:
-        output_file_name = create_new_data(file_path)
-        call(['hadoop', 'fs', '-rm', '-r', hadoop_new_data])
-        call(['hadoop', 'fs', '-mkdir', hadoop_new_data])
-        call(['hadoop', 'fs', '-copyFromLocal', output_file_name, hadoop_new_data])
-        call(['hadoop', 'fs', '-mkdir', hadoop_trending])
-        call(['hadoop', 'fs', '-copyFromLocal', output_file_name, hadoop_trending])
-        old_timestamp = (datetime.now() - timedelta(days=5)).strftime('%s')
-        logging('removing old timestamp: %s' % old_timestamp)
-        call(['hadoop', 'fs', '-rm', hadoop_trending + old_timestamp])
-        call(['hadoop', 'fs', '-mkdir', hadoop_raw_data])
-        call(['hadoop', 'fs', '-moveFromLocal', output_file_name, hadoop_raw_data])
-    else:
-        logging('Error downloading data')
-    logging('finished processing for %s' % timestamp)
-    os.remove(file_path)
-    logging('--------------------------------------------')
-
+    get_time_range(start_timestamp, end_timestamp)
