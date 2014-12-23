@@ -73,8 +73,12 @@ def get_time_range(start_timestamp, end_timestamp):
 
     while start_timestamp < end_timestamp:
         file_path = download_timestamp(download_dir, start_timestamp)
-        output_file_name = create_new_data(file_path, start_timestamp)
-        call(['hadoop', 'fs', '-moveFromLocal', output_file_name, hadoop_dump])
+        if file_path:
+            output_file_name = create_new_data(file_path, start_timestamp)
+            call(['hadoop', 'fs', '-moveFromLocal', output_file_name, hadoop_dump])
+            os.remove(file_path)
+        else:
+            logging('Failed to get data for %s' % start_timestamp)
         start_timestamp += timedelta(hours=1)
 
 if __name__ == '__main__':

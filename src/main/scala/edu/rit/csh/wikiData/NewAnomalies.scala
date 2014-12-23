@@ -45,7 +45,7 @@ object NewAnomalies {
       .filter(a => a != null)
       .groupByKey()
       .map({ case(title, data) =>
-        if (data.minBy(_._2)._2 < 50) {
+        if (data.minBy(_._2)._2 < 5) {
           (0, title)
         } else {
           // the data points sorted by timestamp
