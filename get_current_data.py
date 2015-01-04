@@ -72,7 +72,7 @@ if __name__ == '__main__':
         call(['hadoop', 'fs', '-copyFromLocal', output_file_name, hadoop_new_data])
         call(['hadoop', 'fs', '-mkdir', hadoop_trending])
         call(['hadoop', 'fs', '-copyFromLocal', output_file_name, hadoop_trending])
-        old_timestamp = (datetime.now() - timedelta(days=5)).strftime('%s')
+        old_timestamp = (timestamp - timedelta(days=5)).strftime('%s')
         logging('removing old timestamp: %s' % old_timestamp)
         call(['hadoop', 'fs', '-rm', hadoop_trending + old_timestamp])
         call(['hadoop', 'fs', '-mkdir', hadoop_raw_data])
