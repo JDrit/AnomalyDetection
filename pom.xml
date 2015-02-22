@@ -29,6 +29,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_2.10</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
             <artifactId>spark-graphx_2.10</artifactId>
             <version>1.1.1</version>
         </dependency>
@@ -42,6 +47,18 @@
             <artifactId>akka-actor_2.11</artifactId>
             <version>2.3.7</version>
         </dependency>     
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.7.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro-mapred</artifactId>
+            <version>1.7.6</version>
+            <classifier>hadoop2</classifier>
+        </dependency>
+
     </dependencies>
 
 <build>
@@ -57,6 +74,14 @@
                     </goals>
                 </execution>
             </executions>
+        </plugin>
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+                <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                </descriptorRefs>
+            </configuration>
         </plugin>
     </plugins>
 </build>
